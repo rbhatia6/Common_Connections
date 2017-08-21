@@ -1,4 +1,4 @@
-import scala.collection.mutable.{ArrayBuffer, HashMap, ListMap, TreeSet}
+import scala.collection.mutable.{Map, ArrayBuffer, TreeMap, ListMap, TreeSet}
 import java.io._
 
 object connections {
@@ -12,8 +12,8 @@ object connections {
     rows
   }
 
-  def getHM(rows: ArrayBuffer[Array[Int]]): HashMap[Int, TreeSet[Int]] = {
-    var hm = new HashMap[Int, TreeSet[Int]]()
+  def getHM(rows: ArrayBuffer[Array[Int]]): TreeMap[Int, TreeSet[Int]] = {
+    var hm = new TreeMap[Int, TreeSet[Int]]()
     println("Constructing HashMap")
     
     var i=0
@@ -31,7 +31,7 @@ object connections {
     hm
   }
 
-  def directlyConnected(hm: HashMap[Int, TreeSet[Int]], k: Int, v: Int): Boolean = {
+  def directlyConnected(hm: TreeMap[Int, TreeSet[Int]], k: Int, v: Int): Boolean = {
     hm.get(k).contains(v)
   }
 
@@ -39,7 +39,7 @@ object connections {
     set1.intersect(set2)
   }
 
-  def writeHM(hm: HashMap[(Int, Int), Int], filename: String): Unit = {
+  def writeHM(hm: Map[(Int, Int), Int], filename: String): Unit = {
     println("Writing SortedMap....")
     val file = new File(filename);
     val bw = new BufferedWriter(new FileWriter(file))
@@ -55,16 +55,16 @@ object connections {
     bw.close()
   }
 
-  def sortHM(hm: HashMap[(Int, Int), Int]): ListMap[(Int, Int), Int] = {
+  def sortHM(hm: TreeMap[(Int, Int), Int]): ListMap[(Int, Int), Int] = {
     println("Sorting HashMap....")
-    ListMap(hm.toSeq.sortWith(_._2 > _._2):_*)
+    ListMap(hm.toSeq.sortWith(_._2 >= _._2):_*)
   }
 
   def main(args: Array[String]): Unit = {
-    val rows = readCSV("../Files/common_connection_200k.csv")
+    val rows = readCSV("../common_connection_200k.csv")
     val hm = getHM(rows)
     
-    var Conn2HM = new HashMap[(Int, Int), Int]()
+    var Conn2HM = new TreeMap[(Int, Int), Int]()
     var i=0
     for ((k1,v1) <- hm) {                    // k1: member_id, v1: level 1 connections set
       i += 1
@@ -75,19 +75,20 @@ object connections {
         var k = 0
         for (k3 <- v2) {                     // k3: level 2 connection keys
           k += 1
-          if ((k1 != k3) && !directlyConnected(hm, k1, k2)) {
+          if ((k1 != k3) & !directlyConnected(hm, k1, k3) & !Conn2HM.contains((k3,k1))) {
             println("i = %d; j = %d; k = %d".format(i, j, k))
             val v3 = hm.getOrElse(k3, TreeSet[Int]())
             val connSet = getConnIntersections(v1, v3)
-            if ((connSet.size > 0) && (!Conn2HM.exists(_._1 == (k3,k1))))
+            if (connSet.size > 0)
               Conn2HM += ((k1,k3) -> connSet.size)
           }
         }
       }
     }
 
-    // val sortedMap = sortHM(Conn2HM)
-    // writeHM(sortedMap, args(0))
     writeHM(Conn2HM, args(0))
+    println("Sorting.....")
+    val sortedMap = sortHM(Conn2HM)
+    writeHM(sortedMap, args(1))
   }
 }
