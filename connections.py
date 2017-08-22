@@ -1,5 +1,6 @@
 import pandas as pd
 import csv
+from io import StringIO
 
 def getDF(filename):
     print("Reading CSV...")
@@ -22,39 +23,26 @@ def getHMap(df):
 def getConnIntersections(set1, set2):
     return set.intersection(set1, set2)
 
-def writeCSV(df, outFile):
-    print("Writing CSV....")
-    df.to_csv(outFile, sep=',', encoding='utf-8', index=False)
-
-def writeHM(hm, outfile):
-    print("Writing hashmap....")
-    with open(outfile, 'w') as f:
-        w = csv.writer(f)
-        w.writerows(hm.items())
-    f.close()
-
 def directlyConnected(hm, k, v):
     return v in hm[k]
 
 
-df = getDF('../Files/common_connection_100k.csv')
-
+df = getDF('../Files/common_connection_200k.csv')
 hm = getHMap(df)
-writeHM(hm, 'hmout.csv')
 
-Conn2HM = {}
+Conn2HM = ()
+f = open("pyout.txt", "a") 
 for index1, (k1,v1) in enumerate(hm.items()):     # k1 = member_id
     for index2, k2 in enumerate(v1):              # k2 = connected_member_id: 1st level of k1
         v2 = hm.get(k2, {})                         
         for index3, k3 in enumerate(v2):          # k3: 1st level of k2, second-level of k1
-            if ((k1 != k3) and (not directlyConnected(hm, k1, k3)) and not ((k3,k1) in Conn2HM)):
-                print("{} : {} - {} : {}".format(index1, k1, index2, k3))
+            if ((k1 != k3) and (not directlyConnected(hm, k1, k3))):
                 v3 = hm.get(k3, {})
                 connSet = getConnIntersections(v1, v3)
                 if len(connSet) > 0:
-                    Conn2HM[(k1,k3)] = len(connSet)
-
-writeHM(Conn2HM, 'Conn2DF1.csv')
-cntDF = pd.DataFrame(list(Conn2HM.items()), columns=['tuple', 'count'])
-cntDF.sort_values('count', ascending=False)
-writeCSV(cntDF, 'cntdf1.csv')
+                    print("{} : {} - {} : {} : {}".format(index1, k1, index2, k3, len(connSet)))
+                    if len(connSet) > Conn2HM[2]:
+                        Conn2HM = (k1, k3, len(connSet))
+                    print("               Max = {} {} {}".format(Conn2HM[0], Conn2HM[1], Conn2HM[2]))
+                    
+print("Max = {} {} {}".format(Conn2HM[0], Conn2HM[1], Conn2HM[2]))
