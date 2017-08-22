@@ -1,6 +1,4 @@
 import pandas as pd
-import csv
-from io import StringIO
 
 def getDF(filename):
     print("Reading CSV...")
