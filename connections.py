@@ -31,7 +31,6 @@ df = getDF('../Files/common_connection_200k.csv')
 hm = getHMap(df)
 
 Conn2HM = ()
-f = open("pyout.txt", "a") 
 for index1, (k1,v1) in enumerate(hm.items()):     # k1 = member_id
     for index2, k2 in enumerate(v1):              # k2 = connected_member_id: 1st level of k1
         v2 = hm.get(k2, {})                         
