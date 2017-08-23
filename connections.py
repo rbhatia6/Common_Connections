@@ -1,11 +1,12 @@
+import operator
 import pandas as pd
 
 def getDF(filename):
     print("Reading CSV...")
     df = pd.read_csv(filename, delimiter=',')
-    return df
+    yield df
 
-def getHMap(df):
+def getDict(df):
     hm = {}
     print("Creating Connections Set HashMap...")
     for index, row in df.iterrows():
@@ -18,28 +19,38 @@ def getHMap(df):
             hm[row[0]] = set([row[1]])
     return hm
 
-def getConnIntersections(set1, set2):
-    return set.intersection(set1, set2)
+def getSortedDict(hm):
+    cntHM = {}
+    for k,v in hm.items():
+        cntHM[k] = len(v)
+
+    return sorted(cntHM.items(), key=operator.itemgetter(1), reverse=True)
+
+def getConnIntersections(hm, k1, k2):
+    return len(set.intersection(hm.get(k1), hm.get(k2)))
 
 def directlyConnected(hm, k, v):
     return v in hm[k]
 
 
 df = getDF('../Files/common_connection_200k.csv')
-hm = getHMap(df)
+hm = getDict(next(df))
+sortedDict = getSortedDict(hm)
 
-Conn2HM = ()
-for index1, (k1,v1) in enumerate(hm.items()):     # k1 = member_id
-    for index2, k2 in enumerate(v1):              # k2 = connected_member_id: 1st level of k1
-        v2 = hm.get(k2, {})                         
-        for index3, k3 in enumerate(v2):          # k3: 1st level of k2, second-level of k1
-            if ((k1 != k3) and (not directlyConnected(hm, k1, k3))):
-                v3 = hm.get(k3, {})
-                connSet = getConnIntersections(v1, v3)
-                if len(connSet) > 0:
-                    print("{} : {} - {} : {} : {}".format(index1, k1, index2, k3, len(connSet)))
-                    if len(connSet) > Conn2HM[2]:
-                        Conn2HM = (k1, k3, len(connSet))
+Conn2HM = (0,0,0)
+for index1, (k1,cnt1) in enumerate(sortedDict):  
+    if ((Conn2HM[2] > 0) and (Conn2HM[2] > cnt1)):
+        break
+    for index2, (k2,cnt2) in enumerate(sortedDict):        
+        if ((Conn2HM[2] > 0) and (Conn2HM[2] > cnt2)):
+            break
+        if ((k1 != k2) and (not directlyConnected(hm, k1, k2))):
+            v2 = hm.get(k2)
+            connSetLen = getConnIntersections(hm, k1, k2)
+            if connSetLen > 0:
+                print("{} : k1={} - cnt1={} : {} : k2={} : cnt2={} : {}".format(index1, k1, cnt1, index2, k2, cnt2, connSetLen))
+                if connSetLen > Conn2HM[2]:
+                    Conn2HM = (k1, k2, connSetLen)
                     print("               Max = {} {} {}".format(Conn2HM[0], Conn2HM[1], Conn2HM[2]))
                     
 print("Max = {} {} {}".format(Conn2HM[0], Conn2HM[1], Conn2HM[2]))
