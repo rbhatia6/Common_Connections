@@ -20,7 +20,6 @@ public class CFDriver extends Configured implements Tool {
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = new Configuration();
-        conf.set("mapreduce.job.queuename", "root.mr.intuit.adhoc");
 
         Job job = new Job(conf);
 
